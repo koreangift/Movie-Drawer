@@ -1,0 +1,32 @@
+
+:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#111318;color:#f5f2eb}
+*{box-sizing:border-box} body{margin:0} main,header,footer{width:min(1060px,90%);margin:auto}
+header{padding:25px 0;border-bottom:1px solid #363941;font-weight:800} header span{color:#f6bd73}
+.hero{padding:62px 0 38px}.eyebrow{color:#f6bd73;font-size:.8rem;font-weight:800;letter-spacing:.17em}
+h1{font-size:clamp(2.4rem,7vw,4.7rem);margin:.15em 0;letter-spacing:-.06em}
+p{line-height:1.65;color:#c7c8ce} form{max-width:600px;display:flex;gap:8px}
+input,button{font:inherit;border-radius:10px;padding:12px;border:1px solid #555a64}
+input{min-width:0;flex:1;background:#20232b;color:inherit} button{cursor:pointer}
+form button{background:#f6bd73;color:#21160a;font-weight:800;border-color:transparent}
+:focus-visible{outline:3px solid #f6bd73;outline-offset:4px}
+.section-title{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}.section-title h2{margin:0}
+#status{margin:0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:18px;margin-top:18px}
+.card{width:100%;text-align:left;padding:0;overflow:hidden;background:#20232b;color:inherit}
+.card:hover{border-color:#f6bd73}.art{aspect-ratio:4/5;display:grid;place-items:center;background:radial-gradient(ellipse at 20% 10%,var(--accent),transparent 65%),linear-gradient(145deg,#212634,#111318);color:#fff;font-size:clamp(3rem,9vw,6rem);font-weight:900}
+.caption{display:block;padding:15px}.caption strong,.caption small{display:block}.caption small{margin-top:5px;color:#c7c8ce}
+footer{margin-top:48px;padding:20px 0;border-top:1px solid #363941;color:#c7c8ce;font-size:.85rem}
+dialog{width:min(540px,90vw);background:#20232b;color:inherit;border:1px solid #555a64;border-radius:16px;padding:25px}
+dialog::backdrop{background:#08090dd9} dialog form{justify-content:flex-end}
+.poster{width:100%;height:100%;object-fit:cover}.credentials{margin-top:15px;max-width:600px}.credentials input{display:block;width:100%;margin-top:8px}.credentials p{font-size:.85rem}
+.retry{margin:10px 0;background:#272b35;color:inherit}
+.art{position:relative;overflow:hidden;aspect-ratio:2/3}
+.art.placeholder{font-size:1.1rem}.art .poster{position:absolute;inset:0}
+.card{align-self:start}.caption{overflow-wrap:anywhere}
+dialog{max-height:85vh;overflow:auto;overflow-wrap:anywhere}
+@media(max-width:560px){
+  .hero{padding:34px 0 28px}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .caption{padding:10px}
+  input,button{min-height:44px}
+}
+@media(max-width:320px){.grid{grid-template-columns:1fr}}
