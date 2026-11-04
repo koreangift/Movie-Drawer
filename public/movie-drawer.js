@@ -13,6 +13,7 @@ const token = document.querySelector('#token');
 const resultsTitle = document.querySelector('#results-title');
 const status = document.querySelector('#status');
 let activeSearch;
+const serverAuth = Symbol('server authentication');
 let activeDetail;
 const detailStatus = document.querySelector('#detail-status');
 const searchRetry = document.querySelector('#search-retry');
@@ -27,14 +28,8 @@ function showSearchError(message, term) {
   status.textContent = message;
   searchRetry.hidden = false;
   searchRetry.onclick = () => {
-    const accessToken = token.value.trim();
-    if (accessToken) {
-      searchTmdb(term, accessToken);
-    } else {
-      status.textContent = 'TMDB 토큰을 입력한 뒤 다시 시도하세요.';
-      token.closest('details').open = true;
-      token.focus();
-    }
+    const accessToken = token.value.trim() || serverAuth;
+    searchTmdb(term, accessToken);
   };
 }
 
@@ -44,6 +39,20 @@ function renderDetails(movie) {
     [movie.genre, movie.release_date || '개봉일 미정'].filter(Boolean).join(' · ');
   document.querySelector('#movie-overview').textContent =
     movie.overview || '등록된 줄거리가 없습니다.';
+}
+
+function requestMovieData(path, params, accessToken, signal) {
+  const url = accessToken === serverAuth
+    ? new URL('/api/tmdb', location.origin)
+    : new URL('https://api.themoviedb.org/3/' + path);
+  url.search = new URLSearchParams(params);
+  const headers = { Accept: 'application/json' };
+  if (accessToken === serverAuth) {
+    url.searchParams.set('path', path);
+  } else {
+    headers.Authorization = 'Bearer ' + accessToken;
+  }
+  return fetch(url, { headers, signal });
 }
 
 async function openDetails(movie, accessToken) {
@@ -61,12 +70,7 @@ async function openDetails(movie, accessToken) {
   detailStatus.textContent = '상세 정보를 불러오는 중입니다…';
 
   try {
-    const url = new URL('https://api.themoviedb.org/3/movie/' + encodeURIComponent(movie.id));
-    url.searchParams.set('language', 'ko-KR');
-    const response = await fetch(url, {
-      headers: { Authorization: 'Bearer ' + accessToken, Accept: 'application/json' },
-      signal: request.signal
-    });
+    const response = await requestMovieData('movie/' + movie.id, { language: 'ko-KR' }, accessToken, request.signal);
     if (!response.ok) throw new Error('TMDB request failed');
     const data = await response.json();
     if (activeDetail !== request || !details.open) return;
@@ -100,17 +104,20 @@ async function searchTmdb(term, accessToken) {
   const request = new AbortController();
   activeSearch = request;
   resetSearchRetry();
-  resultsTitle.textContent = 'TMDB 검색 결과';
+  const heading = term ? 'TMDB 검색 결과' : 'TMDB 인기 영화';
+  resultsTitle.textContent = heading;
   results.replaceChildren();
   status.textContent = '영화를 검색하는 중입니다…';
   try {
-    const url = new URL('https://api.themoviedb.org/3/search/movie');
-    url.search = new URLSearchParams({ query: term, language: 'ko-KR', include_adult: 'false' });
-    const response = await fetch(url, {
-      headers: { Authorization: 'Bearer ' + accessToken, Accept: 'application/json' },
-      signal: request.signal
-    });
+    const path = term ? 'search/movie' : 'movie/popular';
+    const params = term ? { query: term, include_adult: 'false', language: 'ko-KR' } : { language: 'ko-KR' };
+    const response = await requestMovieData(path, params, accessToken, request.signal);
     if (request.signal.aborted) return;
+    if (response.status === 503 && accessToken === serverAuth) {
+      renderMovies(term);
+      status.textContent += ' · 실시간 검색은 TMDB 설정에서 토큰을 입력하면 사용할 수 있습니다.';
+      return;
+    }
     if (!response.ok) {
       showSearchError(response.status === 401
         ? '인증에 실패했습니다. API Read Access Token을 확인한 뒤 다시 검색하세요.'
@@ -118,7 +125,7 @@ async function searchTmdb(term, accessToken) {
       return;
     }
     const data = await response.json();
-    if (!request.signal.aborted) renderCards(data.results, 'TMDB 검색 결과', accessToken);
+    if (!request.signal.aborted) renderCards(data.results, heading, accessToken);
   } catch {
     if (!request.signal.aborted) showSearchError('TMDB에 연결할 수 없습니다. 연결을 확인한 뒤 다시 시도하세요.', term);
   } finally {
@@ -175,18 +182,11 @@ function renderCards(matches, heading, accessToken) {
 search.addEventListener('submit', event => {
   event.preventDefault();
   const term = query.value.trim();
-  const accessToken = token.value.trim();
-  if (term && accessToken) {
-    searchTmdb(term, accessToken);
-  } else {
-    activeSearch?.abort();
-    renderMovies(term);
-  }
+  searchTmdb(term, token.value.trim() || serverAuth);
 });
 query.addEventListener('input', () => {
   if (!query.value.trim()) {
-    activeSearch?.abort();
-    renderMovies();
+    searchTmdb('', token.value.trim() || serverAuth);
   }
 });
-renderMovies();
+searchTmdb('', serverAuth);
